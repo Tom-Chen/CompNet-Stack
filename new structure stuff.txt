@@ -1,0 +1,12 @@
+receiving thread
+    wait for start
+    on silence/end put list of tuples in queue
+
+main thread
+    start receiving thread
+    start sending thread
+    blocking queue.get, handle received morse packets
+    
+sending thread
+    poll/threadevent for receiving
+    send if receiving is false
