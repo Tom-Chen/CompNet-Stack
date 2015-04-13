@@ -55,6 +55,7 @@ class socket(sb.socketbase):
         self.recv_thread.start()
         
         # Register this process with the morsockserver
+        print("About to register")
         self._sendCmd("register")
         
     def _internalRecv(self):
@@ -65,6 +66,7 @@ class socket(sb.socketbase):
             
     def _sendCmd(self, instruction, params={}):
         serialized = serialize(instruction, params)
+        # print(serialized)
         self.sock.sendto(serialized, _MORSOCK_SERVER_ADDR)
             
     def _enqueueMessage(self, message, addr):
@@ -106,7 +108,7 @@ class socketserver(StackLayer):
         self.port_map = {}
         self.port_counter = 0
         self.local_lan = "A"
-        self.local_host = "0"
+        self.local_host = "A"
         self.CMD_MAP = {
             "sendto" : self.passDirection,
             "bind" : self.bind,
@@ -143,7 +145,13 @@ class socketserver(StackLayer):
         
     def passDown(self, message, addr, dest_addr):
         dest_addr = sb._ipv42morse(dest_addr)
-        packed = morse.package_message(self.local_lan, self.local_host, dest_addr[0], dest_addr[1], "A", self.port_map[addr[1]], dest_addr[2], message)
+        # print(dest_addr)
+        # print(addr)
+        source_port = str(self.port_map[addr[1]])
+        if len(source_port) == 1:
+            source_port = "0" + source_port
+        packed = morse.package_message(self.local_lan, self.local_host, dest_addr[0], dest_addr[1], "1", source_port, dest_addr[2], message)
+        packed = bytearray(packed,encoding="UTF-8")
         self.sock.sendto(packed, UDP_Server_Address)
     
     def bind(self, request_addr, addr):
@@ -177,13 +185,15 @@ class socketserver(StackLayer):
             if port not in self.port_map:
                 self.port_counter = port + 1
                 self.port_map[addr[1]] = port
-                if self.verbose: print("New process registered on OS port {} bound to morse port {}".format(addr[1], port))
+                #if self.verbose:
+                print("New process registered on OS port {} bound to morse port {}".format(addr[1], port))
                 return
         
         # If no ports are available, forward an exception to the requesting client
         self.sendException("No ports available", addr)
         
     def close(self, addr):
+        # print(self.port_map,addr)
         del self.port_map[addr[1]]  # Close port reservation
     
     def sendException(self, desc, addr):

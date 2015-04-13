@@ -1,7 +1,7 @@
 import time
 import RPi.GPIO as GPIO
 
-def blink(tuple, pin, speed=200):
+def blink(tuple, pin, speed=100):
     if(tuple[0] == 1):
         turn_high(pin)
     else:

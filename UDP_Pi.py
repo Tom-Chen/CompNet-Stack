@@ -7,65 +7,63 @@ UDP_Server_Address = ('localhost', 5281)
 class UDP_Pi(object):
     
     def __init__(self):
-        self.self_map = (input_lan, input_host)
-        self.local_map, input_host
+##        self.local_map, input_host
+##        while not self.local_map:
+##            input_lan = input("Enter LAN (A or B):\n").upper() 
+##            if input_lan == "A":
+##                self.local_map = a_local.map
+##            elif input_lan == "B":
+##                self.local_map = b_local.map
+##            else:
+##                print("Invalid LAN.")
+##        while(input_host not in self.local_map):
+##            input_host = input("Enter Host (A or B):\n").upper()
+##            if input_host not in self.local_map or input_host == "R":
+##                print("Invalid Host")
+
+        self.local_map = a_local.map
+        
+        self.self_map = ("A","A")
         self.sock = sb.CN_Socket(2,2)
         self.sock.bind(UDP_Server_Address)
         self.recv_thread = threading.Thread(target=self._internalRecv)
         self.recv_thread.start()
 
-        while not self.local_map:
-            input_lan = input("Enter LAN (A or B):\n").upper() 
-            if input_lan == "A":
-                self.local_map = a_local.map
-            elif input_lan == "B":
-                self.local_map = b_local.map
-            else:
-                print("Invalid LAN.")
-        while(input_host not in self.local_map):
-            input_host = input("Enter Host (A or B):\n").upper()
-            if input_host not in self.local_map or input_host == "R":
-                print("Invalid Host")
+
         
         print ("UDP_Pi receiving client started.")
         
-        recvqueue = queue.Queue()
-        sendqueue = queue.Queue() # finished messages
+        self.recvqueue = queue.Queue()
+        self.sendqueue = queue.Queue() # finished messages
         # packqueue = queue.Queue() # messages that need to be packaged
-        transmitEvent = threading.Event()
-        transmitEvent.set()
-        morse.receive(recvqueue.put,transmitEvent,23)
-        self.send_Thread = threading.Thread(target = morse.send,args = (sendqueue,transmitEvent,17))
-        self.listen_Thread = threading.Thread(target = listen_local)
+        self.transmitEvent = threading.Event()
+        self.transmitEvent.set()
+        morse.Receive(self.recvqueue.put,self.transmitEvent,23)
+        self.send_Thread = threading.Thread(target = morse.send,args = (self.sendqueue,self.transmitEvent,17))
+        self.listen_Thread = threading.Thread(target = self.listen_local)
         self.send_Thread.start()
-        self.listen_Thread = start()
+        self.listen_Thread.start()
 
     def _internalRecv(self):
         while True:
             data, addr = self.sock.recvfrom(8192)
-            data = deserialize(data)
-            print(data)
-            
-
-    # def send_local(self):
-        # print("Sending thread started.")
-        # while True:
-            # print("Waiting for a message...")
-            # [message,dest_ip,dest_port] = packqueue.get()
-            
+            decoded_msg = data.decode("UTF-8")
+            print(decoded_msg)
+            self.sendqueue.put(decoded_msg)
             
     def listen_local(self):
         #should this be on a constant basis or should we just call it when we have a packet?
         print("Local listening thread started.")
         while True:
-            packet = morse.reverse_translate(recvqueue.get())
+            packet = morse.reverse_translate(self.recvqueue.get())
+            # print(packet)
             if len(packet) >= 14: # MAC + 13 characters for the header
                 routeMAC = packet[0]
-                if validate_datalayer(routeMAC):
-                    if validate_chksum(packet[1:10]): # is the checksum valid?
+                if self.validate_datalayer(routeMAC):
+                    if self.validate_chksum(packet[1:10]): # is the checksum valid?
                         dest_lan = packet[2]
                         dest_host = packet[3]
-                        if validate_udplayer(dest_lan, dest_host): # check destination host and LAN
+                        if self.validate_udplayer(dest_lan, dest_host): # check destination host and LAN
                             print(packet) # do something else here
                         else:
                             print("Packet has a different destination LAN and host. Discarding packet.")

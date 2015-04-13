@@ -61,7 +61,7 @@ def reverse_translate(tuples):
     return message
 
 def package_message(sourceLAN, sourceMac, destLAN, destMac, nextProtocol,sourcePort,destPort,payload):
-    return sourceLAN + sourceMac + destLAN + destMac + nextProtocol + (utilities.createIPv4chksum(sourceLAN,sourceMac, destLAN, destMac, nextProtocol)) + str(sourcePort) + str(destPort) + payload
+    return sourceLAN + sourceMac + destLAN + destMac + nextProtocol + (utilities.createIPv4chksum(sourceLAN, sourceMac, destLAN, destMac, nextProtocol)) + str(sourcePort) + str(destPort) + payload
     
 
 def send(messageQueue,transmitEvent,pin=17):
@@ -70,11 +70,24 @@ def send(messageQueue,transmitEvent,pin=17):
     while True:
         print("Waiting for a message...")
         message = messageQueue.get()
+
+        source_lan = message[0]
+        dest_lan = message[2]
+        dest_host = message[3]
+
+        if source_lan == dest_lan: # since we only have the data layer mac when sending locally we only add it here
+            mac = translate_message(dest_host)
+        else:
+            mac = translate_message("R")
+        
         print("Waiting until bus is clear...")
         transmitEvent.wait()
         print("Bus is clear.")
         gpio.blink((1,10),pin) # start prosign
         gpio.blink((0,1),pin)
+        for tup in mac: # smush the local destination mac onto the front
+            gpio.blink(tup,pin)
+        gpio.blink((0,3),pin)
         tups = translate_message(message)
         for tup in tups:
             gpio.blink(tup,pin)
@@ -101,7 +114,7 @@ class Receive(object):
     def edgeFound(self,pin=23):
         self.now_time = time.time()
         delta = self.now_time - self.prev_time
-        pulse = (self.state,delta*200) # convert to 200hz
+        pulse = (self.state,delta*100) # convert to 200hz
         self.prev_time = self.now_time
         self.state = gpio.read_pin(pin)
         
@@ -119,6 +132,7 @@ class Receive(object):
             return
             
         if self.receiving:
+            # print(pulse)
             self.output.append(pulse)
     
 # if __name__ == "__main__":

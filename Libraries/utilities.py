@@ -16,7 +16,6 @@ def createIPv4chksum(sourceLAN, sourceMac, destLAN, destMac, nextProtocol):
     decsum = 0
     for item in header:
         decsum += int(item)
-    print(decsum)
     # print(bin(decsum))
     binsumflip = bin(decsum)[2:]
     binsumflip = "0" * (16-len(binsumflip)) + binsumflip

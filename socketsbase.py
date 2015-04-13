@@ -87,7 +87,8 @@ def _ipv42morse (ipv4):
     also handles ports
     """
 
-    ipv4 = ipv4.replace(':','.').split('.')
+    ipv4 = ipv4[0].replace(':','.').split('.')
+    # print(ipv4)
     return [chr(int(ipv4[2])), chr(int(ipv4[3])), ipv4[4]]
 
 
