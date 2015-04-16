@@ -16,13 +16,13 @@ class UDP_Pi(object):
 ##            else:
 ##                print("Invalid LAN.")
 ##        while(input_host not in self.local_map):
-##            input_host = input("Enter Host (A or B):\n").upper()
+       input_host = input("Enter Host (A through C):\n").upper()
 ##            if input_host not in self.local_map or input_host == "R":
 ##                print("Invalid Host")
 
         # self.local_map = a_local.map
         
-        self.self_map = ("B","A")
+        self.self_map = ("B",input_host)
         self.sock = sb.CN_Socket(2,2)
         self.sock.bind(UDP_Server_Address)
         self.recv_thread = threading.Thread(target=self._internalRecv)

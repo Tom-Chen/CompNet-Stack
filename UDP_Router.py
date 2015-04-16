@@ -1,7 +1,9 @@
 from Libraries import morse, utilities, CN_Sockets
 from Constants import routers
 import queue, threading
+import socketsbase as sb
 from UDP_Pi import UDP_Pi 
+UDP_Server_Address = ('localhost', 5281)
 
 class UDP_Router(UDP_Pi):
 
@@ -21,8 +23,13 @@ class UDP_Router(UDP_Pi):
         self.self_map = ("B", "R")
  
         socket, AF_INET, SOCK_DGRAM, timeout = CN_Sockets.socket, CN_Sockets.AF_INET, CN_Sockets.SOCK_DGRAM, CN_Sockets.timeout
-        self.sock = socket(AF_INET, SOCK_DGRAM)
-        self.sock.bind(self.local_map["R"]) # changed to pi IP address and port 2048
+        self.intersock = socket(AF_INET, SOCK_DGRAM)
+        self.intersock.bind(("192.168.128.104",2048)) # changed to pi IP address and port 2048
+
+        self.sock = sb.CN_Socket(2,2)
+        self.sock.bind(UDP_Server_Address)
+        self.recv_thread = threading.Thread(target=self._internalRecv)
+        self.recv_thread.start()
         
         print ("UDP router started.")
         
@@ -32,8 +39,8 @@ class UDP_Router(UDP_Pi):
         self.transmitEvent.set()
         morse.Receive(self.recvqueue.put,self.transmitEvent,23)
         self.send_Thread = threading.Thread(target = morse.send,args = (self.sendqueue,self.transmitEvent,17))
-        self.routing_Thread = threading.Thread(target = self.route_packets,args=(self.sock,))
-        self.listen_Thread = threading.Thread(target = self.listen_local,args=(self.sock,))
+        self.routing_Thread = threading.Thread(target = self.route_packets,args=(self.intersock,))
+        self.listen_Thread = threading.Thread(target = self.listen_local,args=(self.intersock,))
         self.send_Thread.start()
         self.routing_Thread.start()
         self.listen_Thread.start()
@@ -71,7 +78,7 @@ class UDP_Router(UDP_Pi):
     def route_packets(self,sock):
         print("Packet routing thread started.")
         while True:
-            bytearray_msg, source_address = sock.recvfrom(1024)
+            bytearray_msg, source_address = sock.recvfrom(8192)
             source_IP, source_port = source_address
             print ("\nMessage received from ip address {}, port {}:".format(source_IP,source_port))
 ##            print (bytearray_msg.decode("UTF-8"))

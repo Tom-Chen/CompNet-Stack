@@ -107,8 +107,8 @@ class socketserver(StackLayer):
         self.verbose = verbose
         self.port_map = {}
         self.port_counter = 0
-        self.local_lan = "A"
-        self.local_host = "A"
+        self.local_lan = input("Enter LAN (A through D):\n").upper() 
+        self.local_host = input("Enter Host (A through C or R):\n")
         self.CMD_MAP = {
             "sendto" : self.passDirection,
             "bind" : self.bind,
@@ -131,7 +131,7 @@ class socketserver(StackLayer):
         if(addr[1] == 5281):
             self.passUp(message, addr, dest_addr)
         else:
-            print(addr,dest_addr)
+            # print(addr,dest_addr)
             self.passDown(message, addr, dest_addr)
 
     def passUp(self, message, addr, dest_addr):

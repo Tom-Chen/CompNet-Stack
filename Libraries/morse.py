@@ -114,12 +114,12 @@ class Receive(object):
     def edgeFound(self,pin=23):
         self.now_time = time.time()
         delta = self.now_time - self.prev_time
-        pulse = (self.state,delta*100) # convert to 200hz
+        pulse = (self.state,delta*100) # convert to 100hz
         self.prev_time = self.now_time
         self.state = gpio.read_pin(pin)
         
         if pulse[0] and pulse[1] > 10:
-            if pulse[1] < 30:
+            if pulse[1] < 20:
                 self.receiving = True
                 self.transmitEvent.clear()
                 self.output = []
