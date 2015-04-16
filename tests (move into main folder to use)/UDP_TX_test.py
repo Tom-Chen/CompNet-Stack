@@ -1,5 +1,5 @@
 
-import RCP # RCP adds ability to interrupt "while True" loop with ctl-C
+import RPC # RPC adds ability to interrupt "while True" loop with ctl-C
     
 
             
@@ -12,15 +12,12 @@ The server, runing UDP_RX, determines the client's port number from each message
 """
     
     
-    def __init__(self,Server_Address=("192.168.66.65:42",99)):   # create a socket instance.
-                                                            # the "address" is IPv4 address ("127.0.0.1") and port number (5280)
-                                                            # "127.0.0.1" is a special IPv4 address indicating that the socket will be communicating
-                                                            # over a simulated layer 1 and 2 within a single machine (Laptop or Pi)
+    def __init__(self,Server_Address=("192.168.66.65",2048)):
 
-        socket, AF_INET, SOCK_DGRAM = RCP.socket, RCP.AF_INET, RCP.SOCK_DGRAM
-        # socket = RCP.socket, which is socket.socket with a slignt modification to allow you to use ctl-c to terminate a test safely
-        # RCP.AF_INET is the constant 2, indicating that the address is in IPv4 format
-        # RCP.SOCK_DGRAM is the constant 2, indicating that the programmer intends to use the Universal Datagram Protocol of the Transport Layer
+        socket, AF_INET, SOCK_DGRAM = RPC.socket, RPC.AF_INET, RPC.SOCK_DGRAM
+        # socket = RPC.socket, which is socket.socket with a slignt modification to allow you to use ctl-c to terminate a test safely
+        # RPC.AF_INET is the constant 2, indicating that the address is in IPv4 format
+        # RPC.SOCK_DGRAM is the constant 2, indicating that the programmer intends to use the Universal Datagram Protocol of the Transport Layer
 
         with socket(AF_INET,SOCK_DGRAM) as sock:  # open the socket
           

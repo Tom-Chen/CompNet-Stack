@@ -1,5 +1,4 @@
 from Libraries import morse, utilities, CN_Sockets
-# from Constants import a_local, b_local
 import queue, threading
 import socketsbase as sb
 UDP_Server_Address = ('localhost', 5281)

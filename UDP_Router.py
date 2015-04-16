@@ -1,5 +1,5 @@
 from Libraries import morse, utilities, CN_Sockets
-from Constants import a_local, b_local, routers
+from Constants import routers
 import queue, threading
 from UDP_Pi import UDP_Pi 
 
@@ -19,7 +19,6 @@ class UDP_Router(UDP_Pi):
 #                print("Invalid LAN.")
 
         self.self_map = ("B", "R")
-        self.local_map = a_local.map
  
         socket, AF_INET, SOCK_DGRAM, timeout = CN_Sockets.socket, CN_Sockets.AF_INET, CN_Sockets.SOCK_DGRAM, CN_Sockets.timeout
         self.sock = socket(AF_INET, SOCK_DGRAM)
