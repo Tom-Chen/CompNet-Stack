@@ -1,5 +1,5 @@
 from Libraries import morse, utilities, CN_Sockets
-from Constants import a_local, b_local
+# from Constants import a_local, b_local
 import queue, threading
 import socketsbase as sb
 UDP_Server_Address = ('localhost', 5281)
@@ -21,9 +21,9 @@ class UDP_Pi(object):
 ##            if input_host not in self.local_map or input_host == "R":
 ##                print("Invalid Host")
 
-        self.local_map = a_local.map
+        # self.local_map = a_local.map
         
-        self.self_map = ("A","A")
+        self.self_map = ("B","A")
         self.sock = sb.CN_Socket(2,2)
         self.sock.bind(UDP_Server_Address)
         self.recv_thread = threading.Thread(target=self._internalRecv)
@@ -56,7 +56,7 @@ class UDP_Pi(object):
         print("Local listening thread started.")
         while True:
             packet = morse.reverse_translate(self.recvqueue.get())
-            # print(packet)
+            print("Received packet: " +  packet)
             if len(packet) >= 14: # MAC + 13 characters for the header
                 routeMAC = packet[0]
                 if self.validate_datalayer(routeMAC):

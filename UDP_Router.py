@@ -18,7 +18,7 @@ class UDP_Router(UDP_Pi):
 #            else:
 #                print("Invalid LAN.")
 
-        self.self_map = ("A", "R")
+        self.self_map = ("B", "R")
         self.local_map = a_local.map
  
         socket, AF_INET, SOCK_DGRAM, timeout = CN_Sockets.socket, CN_Sockets.AF_INET, CN_Sockets.SOCK_DGRAM, CN_Sockets.timeout
@@ -44,6 +44,7 @@ class UDP_Router(UDP_Pi):
         while True:
             translated_packet = morse.reverse_translate(self.recvqueue.get())
             # experimental handling logic
+            print("Received local packet: " + translated_packet)
             if len(translated_packet) >= 14: # MAC + 13 characters for header
                 routeMAC = translated_packet[0]
                 if self.validate_datalayer(routeMAC): 
@@ -78,6 +79,7 @@ class UDP_Router(UDP_Pi):
 ##            morse_tuples = ast.literal_eval(bytearray_msg.decode("UTF-8"))
 ##            translated_packet = morse.reverse_translate(morse_tuples)
             translated_packet = bytearray_msg.decode("UTF-8")
+            print("Received internet packet: " + translated_packet)
             if len(translated_packet) >= 13: # 13 characters for the header 
                 if utilities.testIPv4chksum(translated_packet[0:9]):
                     dest_lan = translated_packet[2]
