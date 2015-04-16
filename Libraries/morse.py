@@ -32,43 +32,43 @@ def translate_message(message):
     tuplePack.pop()
     return tuplePack
 
-def reverse_translate(tuples):
+def reverse_translate(tuples,verbose=False):
     message = ""
     letter = ""
     for t in tuples:
-        if(t[0] == 0): #end of something
-            if(t[1] >= 5):
-            # if(t[1] == 7):
+        if(t[0] == 0): # off pulse signalling an end
+            if(t[1] >= 5): # space
                 if letter != '':
                     reallet = From_Morse[letter]
                     message = message + reallet + " "
                 else:
                     message += " "
                 letter = ""
-            elif(t[1] >= 2):
-            # elif(t[1] == 3):
+            elif(t[1] >= 2): # letter end
                 reallet = From_Morse[letter]
                 message = message + reallet
                 letter = ""
         else:
-            if(t[1] >= 2):
-            # if(t[1] == 3):
+            if(t[1] >= 2): # dash
                 letter = letter + "-"
-            else:
+            else: # dot
                 letter = letter + "."
     reallet = From_Morse[letter]
+    if verbose: print(reallet)
     message = message + reallet
     return message
 
 def package_message(sourceLAN, sourceMac, destLAN, destMac, nextProtocol,sourcePort,destPort,payload):
-    return sourceLAN + sourceMac + destLAN + destMac + nextProtocol + (utilities.createIPv4chksum(sourceLAN, sourceMac, destLAN, destMac, nextProtocol)) + str(sourcePort) + str(destPort) + payload
+    return sourceLAN + sourceMac + destLAN + destMac + nextProtocol + \
+    (utilities.createIPv4chksum(sourceLAN, sourceMac, destLAN, destMac, nextProtocol)) + str(sourcePort) + str(destPort) + payload
     
 
-def send(messageQueue,transmitEvent,pin=17):
+def send(messageQueue,transmitEvent,pin=17,verbose=True):
     gpio.prepare_pin_out(pin)
-    print("Sending thread started.")
+    if verbose:
+        print("Sending thread started.")
     while True:
-        print("Waiting for a message...")
+        if verbose: print("Waiting for a message...")
         message = messageQueue.get()
 
         source_lan = message[0]
@@ -77,12 +77,12 @@ def send(messageQueue,transmitEvent,pin=17):
 
         if source_lan == dest_lan: # since we only have the data layer mac when sending locally we only add it here
             mac = translate_message(dest_host)
-        else:
+        else: # if you don't know what to do send it to the router
             mac = translate_message("R")
         
-        print("Waiting until bus is clear...")
+        if verbose: print("Waiting until bus is clear...")
         transmitEvent.wait()
-        print("Bus is clear.")
+        if verbose: print("Bus is clear.")
         gpio.blink((1,10),pin) # start prosign
         gpio.blink((0,1),pin)
         for tup in mac: # smush the local destination mac onto the front
@@ -94,14 +94,14 @@ def send(messageQueue,transmitEvent,pin=17):
         gpio.blink((0,1),pin)
         gpio.blink((1,30),pin) # end prosign
         gpio.blink((0,1),pin)
-        print("Message sent.")
+        if verbose: print("Message sent.")
 
 class Receive(object):
 
-    def __init__(self,queuePut,transmitEvent,pin=23):
+    def __init__(self,queuePut,transmitEvent,pin=23,verbose=True):
         gpio.prepare_pin_in(pin)
         self.output = [] #set of output tuples
-  
+        self.verbose = verbose
         self.prev_time = time.time()
         self.now_time = time.time()
         self.state = gpio.read_pin(pin)
@@ -109,7 +109,7 @@ class Receive(object):
         self.transmitEvent = transmitEvent
         self.queuePut = queuePut
         gpio.add_event_detect(pin,self.edgeFound)
-        print("Listening for messages. GPIO event added.")
+        if self.verbose: print("GPIO event added.")
 
     def edgeFound(self,pin=23):
         self.now_time = time.time()
@@ -123,16 +123,15 @@ class Receive(object):
                 self.receiving = True
                 self.transmitEvent.clear()
                 self.output = []
-                print("Start sign received.")
+                if self.verbose: print("Start sign received.")
             else:
                 self.receiving = False
                 self.transmitEvent.set()
                 self.queuePut(self.output)
-                print("End sign received")
+                if self.verbose: print("End sign received")
             return
             
         if self.receiving:
-            # print(pulse)
             self.output.append(pulse)
     
 # if __name__ == "__main__":

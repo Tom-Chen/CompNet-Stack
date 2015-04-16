@@ -86,11 +86,8 @@ def _ipv42morse (ipv4):
     ex. input = '192.168.82.48', output = 'R0'
     also handles ports
     """
-
-    # ipv4 = ipv4[0].replace(':','.').split('.')
     port = ipv4[1]
     ipv4 = ipv4[0].split('.')
-    # print(ipv4)
     return [chr(int(ipv4[2])), chr(int(ipv4[3])), port]
 
 

@@ -7,7 +7,7 @@ def checkLAN(input):
 def checkHost(input):
     if len(input) == 1:
         if input.isalpha():
-            if input.upper() != "R":
+            if input != "R":
                 return True
     return False
     

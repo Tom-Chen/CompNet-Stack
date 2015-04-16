@@ -1,5 +1,5 @@
 '''
-morsocket.py
+morsockets.py
 ------------
 A set of classes to implement basic socket functionality
 for the CN-Internet.
@@ -55,7 +55,6 @@ class socket(sb.socketbase):
         self.recv_thread.start()
         
         # Register this process with the morsockserver
-        print("About to register")
         self._sendCmd("register")
         
     def _internalRecv(self):
@@ -66,7 +65,6 @@ class socket(sb.socketbase):
             
     def _sendCmd(self, instruction, params={}):
         serialized = serialize(instruction, params)
-        # print(serialized)
         self.sock.sendto(serialized, _MORSOCK_SERVER_ADDR)
             
     def _enqueueMessage(self, message, addr):
@@ -109,6 +107,7 @@ class socketserver(StackLayer):
         self.port_counter = 0
         self.local_lan = input("Enter LAN (A through D):\n").upper() 
         self.local_host = input("Enter Host (A through C or R):\n")
+        print("Running...")
         self.CMD_MAP = {
             "sendto" : self.passDirection,
             "bind" : self.bind,
@@ -131,7 +130,6 @@ class socketserver(StackLayer):
         if(addr[1] == 5281):
             self.passUp(message, addr, dest_addr)
         else:
-            # print(addr,dest_addr)
             self.passDown(message, addr, dest_addr)
 
     def passUp(self, message, addr, dest_addr):
@@ -146,8 +144,6 @@ class socketserver(StackLayer):
         
     def passDown(self, message, addr, dest_addr):
         dest_addr = sb._ipv42morse(dest_addr)
-        # print(dest_addr)
-        # print(addr)
         source_port = str(self.port_map[addr[1]])
         if len(source_port) == 1:
             source_port = "0" + source_port
@@ -194,7 +190,6 @@ class socketserver(StackLayer):
         self.sendException("No ports available", addr)
         
     def close(self, addr):
-        # print(self.port_map,addr)
         del self.port_map[addr[1]]  # Close port reservation
     
     def sendException(self, desc, addr):
@@ -219,5 +214,4 @@ def forcedecode (encoded):
     
 # ----- TESTING CODE ----- #
 if __name__ == "__main__":
-    print("-- Testing: ")
     socketserver()
