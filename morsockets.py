@@ -133,14 +133,14 @@ class socketserver(StackLayer):
             self.passDown(message, addr, dest_addr)
 
     def passUp(self, message, addr, dest_addr):
-        if request_addr[1] not in self.port_map.itervalues():
+        if dest_addr[1] not in self.port_map.itervalues():
             exception = "Port not found"
         else:
             reverseMap = {v: k for k, v in self.port_map.items()}
             self.sock.sendto(serialize("message", {
                 "message": forcedecode(message),
-                "dest_addr": ('localhost', reverseMap[request_addr[1]])
-            }), ('localhost', reverseMap[request_addr[1]]))
+                "dest_addr": ('localhost', reverseMap[dest_addr[1]])
+            }), ('localhost', reverseMap[dest_addr[1]]))
         
     def passDown(self, message, addr, dest_addr):
         dest_addr = sb._ipv42morse(dest_addr)
