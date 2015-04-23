@@ -1,4 +1,4 @@
-from Libraries import morse, utilities, CN_Sockets
+from Libraries import morse, utilities, CN_Sockets, gpio
 import queue, threading
 import socketsbase as sb
 
@@ -39,7 +39,6 @@ class Pi(object):
     def listen_local(self):
         self.self_map = ("B",self.input_host())
         if self.verbose: print("Local listening thread started.")
-        self.sendqueue.put("HELLO")
         while True:
             packet = morse.reverse_translate(self.recvqueue.get())
             if self.verbose: print("Received packet: " +  packet)

@@ -11,14 +11,14 @@ class Router(Pi):
         Pi.__init__(self)
     
         self.self_map = ("B", "R")
-        self.intersock = CN_Socketssocket(2,2)
+        self.intersock = CN_Sockets.socket(2,2)
         self.intersock.bind(("192.168.128.102",2048)) # changed to pi IP address and port 2048
         self.routing_Thread = threading.Thread(target = self.route_packets)
         self.routing_Thread.start()
         self.sock.close() # router doesn't run internal morse server
 
     def listen_local(self):
-        if self.verbose: print("Local listening thread started.")
+        if self.verbose: print("Local listening thread (router edition) started.")
         while True:
             translated_packet = morse.reverse_translate(self.recvqueue.get())
             if self.verbose: print("Received local packet: " + translated_packet)
@@ -80,9 +80,4 @@ class Router(Pi):
                   if self.verbose: print("Incomplete packet. Discarding packet.")
 
 if __name__ == "__main__":
-    try: 
-        Router()
-    except:
-        pass
-    finally:
-        gpio.cleanup()
+    Router()
