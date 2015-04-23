@@ -86,13 +86,10 @@ class socket(sb.socketbase):
             })
 
     def recvfrom (self, bufsize):
-        if self.timeout > 0:
-            try:
-                return self.msg_queue.get(False, self.timeout)
-            except queue.Empty:
-                raise TimeoutException("Socket recvfrom operation timed out.")
-        else:
-            return self.msg_queue.get(True,None)
+        try:
+            return self.msg_queue.get(True, self.timeout)
+        except queue.Empty:
+            raise TimeoutException("Socket recvfrom operation timed out.")
             
     def __exit__ (self, argException, argString, argTraceback):
         self.close()
