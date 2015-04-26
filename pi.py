@@ -5,9 +5,10 @@ import socketsbase as sb
 
 class Pi(object):
     
-    def __init__(self,verbose=True):
-        self.verbose = verbose
+    def __init__(self):
+        self.verbose = True
         self.UDP_Server_Address = ('localhost', 5281)
+        self.MORSOCK_Server_Address = ('localhost', 5280)
         self.recvqueue = queue.Queue()
         self.sendqueue = queue.Queue()
         self.transmitEvent = threading.Event()
@@ -33,7 +34,7 @@ class Pi(object):
         while True:
             data, addr = self.sock.recvfrom(8192)
             decoded_msg = data.decode("UTF-8")
-            print(decoded_msg)
+            #print(decoded_msg)
             self.sendqueue.put(decoded_msg)
             
     def listen_local(self):
@@ -46,11 +47,12 @@ class Pi(object):
                 routeMAC = packet[0]
                 if self.validate_datalayer(routeMAC):
                     if self.validate_chksum(packet[1:10]): # is the checksum valid?
-                        dest_lan = packet[2]
-                        dest_host = packet[3]
+                        dest_lan = packet[3]
+                        dest_host = packet[4]
                         if self.validate_udplayer(dest_lan, dest_host): # check destination host and LAN
                             serialized = utilities.serialize("sendto",{"message": packet[1:], "dest_addr": utilities._morse2ipv4(packet[2:4])})
-                            self.sock.sendto(serialized, self.UDP_Server_Address)
+                            self.sock.sendto(serialized, self.MORSOCK_Server_Address)
+                            if self.verbose: print("Passing up.")
                         else:
                             if self.verbose: print("Packet has a different destination LAN and host. Discarding packet.")
                     else:
@@ -68,6 +70,12 @@ class Pi(object):
         
     def validate_udplayer(self,lan,host):
         return (lan == self.self_map[0] and host == self.self_map[1])
+
+    def serialize(instruction, parameters={}):
+        return json.dumps(
+            {"instruction": instruction,
+             "params": parameters
+            }).encode('utf-8')
 
 if __name__ == "__main__":
     Pi()

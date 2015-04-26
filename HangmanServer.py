@@ -1,10 +1,10 @@
-import CN_Sockets, sys
+import morsockets as CN_Sockets, sys
 
 class HangmanServer(object):
    
     def __init__(self):
-        self.server_addr = ('localhost',99)
-        self.client_addr = ('localhost',98)
+        self.server_addr = ('192.168.66.65',99)
+        self.client_addr = ('192.168.66.65',98)
         self.sock = CN_Sockets.socket(2,2)
         self.sock.settimeout(2.0)
         self.sock.bind(self.server_addr)
@@ -78,8 +78,9 @@ class HangmanServer(object):
                     invalid_reply = "Invalid input packet received."
                     print_and_reply(invalid_reply)
                         
-            except CN_Sockets.timeout:
-                print (".",end="",flush=True)
+            except CN_Sockets.TimeoutException:
+                sys.stdout.write(".")
+                sys.stdout.flush()
                 continue
             
             

@@ -79,6 +79,7 @@ class socket(sb.socketbase):
         self._sendCmd("close")
         
     def sendto(self, message, dest_address):
+        #print(message, dest_address)
         self._sendCmd("sendto", {
                 "message": utilities.forcedecode(message),
                 "dest_addr": dest_address
@@ -87,7 +88,7 @@ class socket(sb.socketbase):
     def recvfrom (self, bufsize):
         if self.timeout > 0:
             try:
-                return self.msg_queue.get(False, self.timeout)
+                return self.msg_queue.get(True, self.timeout)
             except queue.Empty:
                 raise TimeoutException("Socket recvfrom operation timed out.")
         else:
@@ -99,11 +100,14 @@ class socket(sb.socketbase):
         super().__exit__(argException, argString, argTraceback)
         
     
-
+class TimeoutException(Exception):
+    def __init__(self,arg):
+        #print(arg)
+        pass
         
 class socketserver(StackLayer):
     
-    def __init__(self, addr=_MORSOCK_SERVER_ADDR, verbose=False):
+    def __init__(self, addr=_MORSOCK_SERVER_ADDR, verbose=True):
         self.verbose = verbose
         self.port_map = {}
         self.port_counter = 0
@@ -122,6 +126,7 @@ class socketserver(StackLayer):
             while True:
                 data, addr = self.sock.recvfrom(8192)
                 cmd_obj = utilities.deserialize(data)
+                if self.verbose: print("Packet received from", addr)
                 cmd_obj['params']['addr'] = addr
                 self.CMD_MAP[cmd_obj['instruction']](**cmd_obj['params'])
                 if self.verbose: print("Received the command {} from {}".format(data, addr))
@@ -135,9 +140,10 @@ class socketserver(StackLayer):
             self.passDown(message, addr, dest_addr)
 
     def passUp(self, message, addr, dest_addr):
-        if dest_addr[1] not in self.port_map.itervalues():
+        if dest_addr[1] not in self.port_map.values():
             exception = "Port not found"
         else:
+            if self.verbose: print("PassUp command received.")
             reverseMap = {v: k for k, v in self.port_map.items()}
             self.sock.sendto(utilities.serialize("message", {
                 "message": utilities.forcedecode(message),
@@ -146,16 +152,18 @@ class socketserver(StackLayer):
         
     def passDown(self, message, addr, dest_addr):
         dest_addr = utilities._ipv42morse(dest_addr)
+        if self.verbose: print("Destination Address: ", dest_addr)
         source_port = str(self.port_map[addr[1]])
         if len(source_port) == 1:
             source_port = "0" + source_port
         packed = morse.package_message(self.local_lan, self.local_host, dest_addr[0], dest_addr[1], "1", source_port, dest_addr[2], message)
+        if self.verbose: print("Packet: " + packed)
         packed = bytearray(packed,encoding="UTF-8")
         self.sock.sendto(packed, UDP_Server_Address)
     
     def bind(self, request_addr, addr):
         
-        if request_addr in self.port_map.itervalues():
+        if request_addr in self.port_map.values():
             exception = "Port in use"
         elif request_addr[1] > _PORT_CAP:
             exception = "Port number out of range. Ports numbers must be >0 and <{}".format(_PORT_CAP)

@@ -1,10 +1,10 @@
-import CN_Sockets, sys
+import morsockets as CN_Sockets, sys
 
 class HangmanClient(object):
     
     def __init__(self):
-        self.server_addr = ('localhost',99)
-        self.client_addr = ('localhost',98)
+        self.server_addr = ('192.168.66.65',99)
+        self.client_addr = ('192.168.66.65',98)
         self.sock = CN_Sockets.socket(2,2)
         self.sock.settimeout(20.0)
         self.sock.bind(self.client_addr)
@@ -31,7 +31,7 @@ class HangmanClient(object):
                     sys.exit()
                 else:
                     print(reply)
-            except CN_Sockets.timeout:
+            except CN_Sockets.TimeoutException:
                 print("Server timed out.")
           
                     
