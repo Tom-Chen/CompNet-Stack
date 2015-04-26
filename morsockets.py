@@ -50,24 +50,28 @@ class socket(sb.socketbase):
         super().__init__(network_protocol, transport_protocol) 
         
         self.sock = sb.CN_Socket(2, 2)
-        self.recv_thread = threading.Thread(target=self._internalRecv)
+        self.running = threading.Event()
+        self.running.set()
+        self.recv_thread = threading.Thread(target=self._internalRecv,args = (self.running, ))
+        self.recv_thread.daemon = True
         self.recv_thread.start()
         
         # Register this process with the morsockserver
         self._sendCmd("register")
         
-    def _internalRecv(self):
-        while True:
+    def _internalRecv(self,running_event):
+        while running_event.isSet():
             data, addr = self.sock.recvfrom(8192)
             data = utilities.deserialize(data)
+            data['params']['addr'] = addr
             self.CMD_MAP[data["instruction"]](**data["params"])
             
     def _sendCmd(self, instruction, params={}):
         serialized = utilities.serialize(instruction, params)
         self.sock.sendto(serialized, _MORSOCK_SERVER_ADDR)
             
-    def _enqueueMessage(self, message, addr):
-        self.msg_queue.put((message, addr))
+    def _enqueueMessage(self, message, dest_addr, addr):
+        self.msg_queue.put((message[13:], addr))
         
     def _raiseException(self, desc):
         raise Exception(desc)
@@ -77,6 +81,10 @@ class socket(sb.socketbase):
         
     def close(self):
         self._sendCmd("close")
+        self.sock.close()
+        print("Socket closing.")
+        self.running.clear()
+        return
         
     def sendto(self, message, dest_address):
         #print(message, dest_address)
@@ -126,10 +134,10 @@ class socketserver(StackLayer):
             while True:
                 data, addr = self.sock.recvfrom(8192)
                 cmd_obj = utilities.deserialize(data)
-                if self.verbose: print("Packet received from", addr)
+                #if self.verbose: print("Packet received from", addr)
                 cmd_obj['params']['addr'] = addr
-                self.CMD_MAP[cmd_obj['instruction']](**cmd_obj['params'])
                 if self.verbose: print("Received the command {} from {}".format(data, addr))
+                self.CMD_MAP[cmd_obj['instruction']](**cmd_obj['params'])
                 
         self.sock.close()
 
@@ -140,15 +148,18 @@ class socketserver(StackLayer):
             self.passDown(message, addr, dest_addr)
 
     def passUp(self, message, addr, dest_addr):
-        if dest_addr[1] not in self.port_map.values():
+        dest_port = int(dest_addr[1])
+        if dest_port not in self.port_map.values():
+            print("Destination port not found.")
             exception = "Port not found"
         else:
-            if self.verbose: print("PassUp command received.")
             reverseMap = {v: k for k, v in self.port_map.items()}
+            morse_port = reverseMap[dest_port]
             self.sock.sendto(utilities.serialize("message", {
-                "message": utilities.forcedecode(message),
-                "dest_addr": ('localhost', reverseMap[dest_addr[1]])
-            }), ('localhost', reverseMap[dest_addr[1]]))
+                "message": message,
+                "dest_addr": ('localhost', morse_port)
+            }), ('localhost', reverseMap[dest_port]))
+            if self.verbose: print("Packet {} sent to localhost {}".format(message,morse_port))
         
     def passDown(self, message, addr, dest_addr):
         dest_addr = utilities._ipv42morse(dest_addr)
@@ -164,8 +175,10 @@ class socketserver(StackLayer):
     def bind(self, request_addr, addr):
         
         if request_addr in self.port_map.values():
+            print("Port in use.")
             exception = "Port in use"
         elif request_addr[1] > _PORT_CAP:
+            print("Port number out of range. Ports numbers must be >0 and <{}".format(_PORT_CAP))
             exception = "Port number out of range. Ports numbers must be >0 and <{}".format(_PORT_CAP)
         else:
             del self.port_map[addr[1]]  # Clear old port reservation

@@ -34,7 +34,7 @@ def _ipv42morse (addr):
 def forcedecode (encoded):
     try:
         return encoded.decode('utf-8')
-    except TypeError:
+    except (TypeError, AttributeError):
         return encoded
 
 def checkLAN(input):

@@ -50,7 +50,7 @@ class Pi(object):
                         dest_lan = packet[3]
                         dest_host = packet[4]
                         if self.validate_udplayer(dest_lan, dest_host): # check destination host and LAN
-                            serialized = utilities.serialize("sendto",{"message": packet[1:], "dest_addr": utilities._morse2ipv4(packet[2:4])})
+                            serialized = utilities.serialize("sendto",{"message": packet[1:], "dest_addr": (utilities._morse2ipv4(packet[3:5]),packet[12:14])})
                             self.sock.sendto(serialized, self.MORSOCK_Server_Address)
                             if self.verbose: print("Passing up.")
                         else:
