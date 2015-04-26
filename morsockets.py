@@ -17,11 +17,10 @@ via the normal sockets library.
 
 # ----- IMPORTS ------ #
 import socketsbase as sb
-import json
 import queue
 import threading
 from interfaces import StackLayer
-from Libraries import morse
+from Libraries import morse, utilities
 
 # Move constants to this namespace
 AF_INET = sb.AF_INET
@@ -60,11 +59,11 @@ class socket(sb.socketbase):
     def _internalRecv(self):
         while True:
             data, addr = self.sock.recvfrom(8192)
-            data = deserialize(data)
+            data = utilities.deserialize(data)
             self.CMD_MAP[data["instruction"]](**data["params"])
             
     def _sendCmd(self, instruction, params={}):
-        serialized = serialize(instruction, params)
+        serialized = utilities.serialize(instruction, params)
         self.sock.sendto(serialized, _MORSOCK_SERVER_ADDR)
             
     def _enqueueMessage(self, message, addr):
@@ -81,7 +80,7 @@ class socket(sb.socketbase):
         
     def sendto(self, message, dest_address):
         self._sendCmd("sendto", {
-                "message": forcedecode(message),
+                "message": utilities.forcedecode(message),
                 "dest_addr": dest_address
             })
 
@@ -122,7 +121,7 @@ class socketserver(StackLayer):
             self.sock.bind(addr)          
             while True:
                 data, addr = self.sock.recvfrom(8192)
-                cmd_obj = deserialize(data)
+                cmd_obj = utilities.deserialize(data)
                 cmd_obj['params']['addr'] = addr
                 self.CMD_MAP[cmd_obj['instruction']](**cmd_obj['params'])
                 if self.verbose: print("Received the command {} from {}".format(data, addr))
@@ -140,13 +139,13 @@ class socketserver(StackLayer):
             exception = "Port not found"
         else:
             reverseMap = {v: k for k, v in self.port_map.items()}
-            self.sock.sendto(serialize("message", {
-                "message": forcedecode(message),
+            self.sock.sendto(utilities.serialize("message", {
+                "message": utilities.forcedecode(message),
                 "dest_addr": ('localhost', reverseMap[dest_addr[1]])
             }), ('localhost', reverseMap[dest_addr[1]]))
         
     def passDown(self, message, addr, dest_addr):
-        dest_addr = sb._ipv42morse(dest_addr)
+        dest_addr = utilities._ipv42morse(dest_addr)
         source_port = str(self.port_map[addr[1]])
         if len(source_port) == 1:
             source_port = "0" + source_port
@@ -196,23 +195,8 @@ class socketserver(StackLayer):
         del self.port_map[addr[1]]  # Close port reservation
     
     def sendException(self, desc, addr):
-        self.sock.sendto(serialize("exception", {"desc": desc}), addr)
-        
-def serialize(instruction, parameters={}):
-    return json.dumps(
-        {"instruction": instruction,
-         "params": parameters
-        }).encode('utf-8')
-        
+        self.sock.sendto(utilities.serialize("exception", {"desc": desc}), addr)
 
-def deserialize(serialized):
-    return json.loads(serialized.decode('utf-8'))
-    
-def forcedecode (encoded):
-    try:
-        return encoded.decode('utf-8')
-    except TypeError:
-        return encoded
     
     
 # ----- TESTING CODE ----- #
