@@ -49,9 +49,8 @@ class Pi(object):
                         dest_lan = packet[2]
                         dest_host = packet[3]
                         if self.validate_udplayer(dest_lan, dest_host): # check destination host and LAN
-                            # if self.verbose: print("Should send the packet up the stack") # do something else here
-                            bytearray_msg = packet[1:].encode("UTF-8") # drop the mac
-                            self.sock.sendto(bytearray_msg, self.UDP_Server_Address)
+                            serialized = utilities.serialize("sendto",{"message": packet[1:], "dest_addr": utilities._morse2ipv4(packet[2:4])})
+                            self.sock.sendto(serialized, self.UDP_Server_Address)
                         else:
                             if self.verbose: print("Packet has a different destination LAN and host. Discarding packet.")
                     else:
