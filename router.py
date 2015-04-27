@@ -12,7 +12,7 @@ class Router(Pi):
     
         self.self_map = ("B", "R")
         self.intersock = CN_Sockets.socket(2,2)
-        self.intersock.bind(("192.168.128.108",2048)) # changed to pi IP address and port 2048
+        self.intersock.bind(("192.168.128.104",2048)) # changed to pi IP address and port 2048
         self.routing_Thread = threading.Thread(target = self.route_packets)
         self.routing_Thread.start()
         self.sock.close() # router doesn't run internal morse server
